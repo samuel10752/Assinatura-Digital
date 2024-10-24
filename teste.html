@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Assinatura Digital</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gerar Assinatura Digital</h1>
+
+    <!-- Formulário para o usuário inserir dados -->
+    <form id="formAssinatura">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required><br><br>
+
+        <label for="cargo">Cargo:</label>
+        <input type="text" id="cargo" name="cargo" required><br><br>
+
+        <button type="button" onclick="gerarAssinatura()">Gerar Assinatura</button>
+    </form>
+
+    <!-- Canvas para desenhar a assinatura -->
+    <canvas id="assinaturaCanvas" width="600" height="200"></canvas><br>
+
+    <!-- Botão para baixar a imagem gerada -->
+    <a id="downloadLink" style="display: none;">Baixar Assinatura</a>
+
+    <script>
+        // Função para ajustar o tamanho da fonte conforme o comprimento do texto
+        function ajustarFonte(ctx, texto, maxLargura, maxFontSize) {
+            let fontSize = maxFontSize;
+            do {
+                ctx.font = `${fontSize}px Arial`;
+                var larguraTexto = ctx.measureText(texto).width;
+                fontSize--;
+            } while (larguraTexto > maxLargura && fontSize > 14); // Reduz a fonte até caber no espaço ou atingir 14px
+            return fontSize;
+        }
+
+        // Função para alinhar o texto à esquerda, com um limite de largura
+        function alinharTextoEsquerda(ctx, texto, yPos, margemEsquerda, maxFontSize, maxLargura) {
+            // Ajusta o tamanho da fonte
+            const fontSize = ajustarFonte(ctx, texto, maxLargura, maxFontSize);
+            ctx.font = `${fontSize}px Arial`;
+
+            // Definir a posição à esquerda
+            const xPos = margemEsquerda; // Margem à esquerda para o nome
+
+            ctx.fillText(texto, xPos, yPos); // Manter a altura fixa e ajustar posição horizontal
+        }
+
+        // Função para alinhar o texto à direita, com um limite de largura
+        function alinharTextoDireita(ctx, texto, yPos, margemDireita, canvasWidth, maxFontSize, maxLargura) {
+            // Ajusta o tamanho da fonte
+            const fontSize = ajustarFonte(ctx, texto, maxLargura, maxFontSize);
+            ctx.font = `${fontSize}px Arial`;
+
+            // Alinhar à direita
+            const larguraTexto = ctx.measureText(texto).width;
+            const xPos = canvasWidth - margemDireita - larguraTexto; // Alinha à direita com a margem especificada
+
+            ctx.fillText(texto, xPos, yPos); // Manter a altura fixa e ajustar posição horizontal
+        }
+
+        // Função para gerar a assinatura digital no canvas
+        function gerarAssinatura() {
+            // Obter os valores inseridos pelo usuário
+            var nome = document.getElementById('nome').value;
+            var cargo = document.getElementById('cargo').value;
+
+            // Verificar se os campos estão preenchidos
+            if (!nome || !cargo) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            // Carregar o canvas e o contexto de desenho
+            var canvas = document.getElementById('assinaturaCanvas');
+            var ctx = canvas.getContext('2d');
+
+            // Limpar o canvas antes de desenhar
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Carregar a imagem de fundo (o arquivo que você fez upload)
+            var img = new Image();
+            img.src = 'Assinatura de e-mail.png';  // Caminho para a imagem de assinatura
+
+            // Garantir que a imagem será desenhada apenas após ser carregada
+            img.onload = function() {
+                // Desenhar a imagem de fundo no canvas
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Definir cor do texto
+                ctx.fillStyle = 'white';
+
+                // Definir a largura máxima e a altura do texto
+                const maxLarguraNome = 250; // Largura máxima permitida para o texto do nome
+                const maxLarguraCargo = 350; // Largura máxima permitida para o texto do cargo
+                const maxFontSize = 16;  // Tamanho máximo da fonte
+                const margemEsquerda = 370; // Margem da esquerda para o nome
+                const margemDireita = 40; // Margem da direita para o cargo
+
+                // Adicionar o texto "Nome" e alinhar à esquerda
+                alinharTextoEsquerda(ctx, nome, 55, margemEsquerda, maxFontSize, maxLarguraNome);
+
+                // Adicionar o texto "Cargo" e alinhar à direita
+                alinharTextoDireita(ctx, cargo, 85, margemDireita, canvas.width, maxFontSize, maxLarguraCargo);
+
+                // Exibir o botão de download
+                var downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = canvas.toDataURL();
+                downloadLink.download = 'assinatura_digital.png';
+                downloadLink.style.display = 'inline';
+                downloadLink.innerText = 'Baixar Assinatura';
+            };
+        }
+    </script>
+
+</body>
+</html>
