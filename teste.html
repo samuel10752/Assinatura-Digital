@@ -13,6 +13,7 @@
         canvas {
             border: 1px solid #000;
             margin-top: 20px;
+            cursor: pointer;
         }
         form {
             margin-bottom: 20px;
@@ -31,6 +32,9 @@
         <label for="cargo">Cargo:</label>
         <input type="text" id="cargo" name="cargo" required><br><br>
 
+        <label for="telefone">Telefone:</label>
+        <input type="text" id="telefone" name="telefone" required><br><br>
+
         <button type="button" onclick="gerarAssinatura()">Gerar Assinatura</button>
     </form>
 
@@ -38,90 +42,87 @@
     <canvas id="assinaturaCanvas" width="600" height="200"></canvas><br>
 
     <!-- Botão para baixar a imagem gerada -->
-    <a id="downloadLink" style="display: none;">Baixar Assinatura</a>
+    <a id="downloadLink" style="display: none;" onclick="ativarCliqueTelefone()">Baixar Assinatura</a>
 
     <script>
-        // Função para ajustar o tamanho da fonte conforme o comprimento do texto
+        let telefoneLinkAtivo = false;
+        let telefoneArea = {}; // Armazenará a área do telefone no canvas
+        let telefoneFormatado = "";
+
         function ajustarFonte(ctx, texto, maxLargura, maxFontSize) {
             let fontSize = maxFontSize;
             do {
                 ctx.font = `${fontSize}px Arial`;
                 var larguraTexto = ctx.measureText(texto).width;
                 fontSize--;
-            } while (larguraTexto > maxLargura && fontSize > 14); // Reduz a fonte até caber no espaço ou atingir 14px
+            } while (larguraTexto > maxLargura && fontSize > 14);
             return fontSize;
         }
 
-        // Função para alinhar o texto à esquerda, com um limite de largura
-        function alinharTextoEsquerda(ctx, texto, yPos, margemEsquerda, maxFontSize, maxLargura) {
-            // Ajusta o tamanho da fonte
+        function desenharTexto(ctx, texto, x, y, maxFontSize, maxLargura) {
             const fontSize = ajustarFonte(ctx, texto, maxLargura, maxFontSize);
             ctx.font = `${fontSize}px Arial`;
-
-            // Definir a posição à esquerda
-            const xPos = margemEsquerda; // Margem à esquerda para o nome
-
-            ctx.fillText(texto, xPos, yPos); // Manter a altura fixa e ajustar posição horizontal
+            ctx.fillText(texto, x, y);
+            return ctx.measureText(texto).width; // Retorna a largura do texto desenhado
         }
 
-        // Função para alinhar o texto à direita, com um limite de largura
-        function alinharTextoDireita(ctx, texto, yPos, margemDireita, canvasWidth, maxFontSize, maxLargura) {
-            // Ajusta o tamanho da fonte
-            const fontSize = ajustarFonte(ctx, texto, maxLargura, maxFontSize);
-            ctx.font = `${fontSize}px Arial`;
-
-            // Alinhar à direita
-            const larguraTexto = ctx.measureText(texto).width;
-            const xPos = canvasWidth - margemDireita - larguraTexto; // Alinha à direita com a margem especificada
-
-            ctx.fillText(texto, xPos, yPos); // Manter a altura fixa e ajustar posição horizontal
-        }
-
-        // Função para gerar a assinatura digital no canvas
         function gerarAssinatura() {
-            // Obter os valores inseridos pelo usuário
             var nome = document.getElementById('nome').value;
             var cargo = document.getElementById('cargo').value;
+            var telefone = document.getElementById('telefone').value;
 
-            // Verificar se os campos estão preenchidos
-            if (!nome || !cargo) {
+            if (!nome || !cargo || !telefone) {
                 alert("Por favor, preencha todos os campos.");
                 return;
             }
 
-            // Carregar o canvas e o contexto de desenho
+            // Formatar o telefone para o link do WhatsApp
+            telefoneFormatado = telefone.replace(/\D/g, ''); // Remove caracteres não numéricos
+
             var canvas = document.getElementById('assinaturaCanvas');
             var ctx = canvas.getContext('2d');
-
-            // Limpar o canvas antes de desenhar
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Carregar a imagem de fundo (o arquivo que você fez upload)
             var img = new Image();
-            img.src = 'Assinatura de e-mail.png';  // Caminho para a imagem de assinatura
+            img.src = 'Assinatura de e-mail.png';
 
-            // Garantir que a imagem será desenhada apenas após ser carregada
             img.onload = function() {
-                // Desenhar a imagem de fundo no canvas
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Definir cor do texto
                 ctx.fillStyle = 'white';
 
-                // Definir a largura máxima e a altura do texto
-                const maxLarguraNome = 250; // Largura máxima permitida para o texto do nome
-                const maxLarguraCargo = 350; // Largura máxima permitida para o texto do cargo
-                const maxFontSize = 16;  // Tamanho máximo da fonte
-                const margemEsquerda = 370; // Margem da esquerda para o nome
-                const margemDireita = 40; // Margem da direita para o cargo
+                // Configurações para posicionamento automático dos textos
+                const maxFontSize = 16;
+                const maxLarguraTextoNome = 250; // Largura máxima para o nome
+                const maxLarguraTextoOutros = 250;
 
-                // Adicionar o texto "Nome" e alinhar à esquerda
-                alinharTextoEsquerda(ctx, nome, 55, margemEsquerda, maxFontSize, maxLarguraNome);
+                // Posições predeterminadas para cada texto
+                const posXNome = 380; // Ajuste para a esquerda
+                const posYNome = 55;
 
-                // Adicionar o texto "Cargo" e alinhar à direita
-                alinharTextoDireita(ctx, cargo, 85, margemDireita, canvas.width, maxFontSize, maxLarguraCargo);
+                const posXCargo = 370;
+                const posYCargo = 85;
 
-                // Exibir o botão de download
+                const posXTelefone = 170;
+                const posYTelefone = 127;
+
+                // Ajustar e desenhar o nome
+                desenharTexto(ctx, nome, posXNome, posYNome, maxFontSize, maxLarguraTextoNome);
+
+                // Ajustar e desenhar o cargo
+                desenharTexto(ctx, cargo, posXCargo, posYCargo, maxFontSize, maxLarguraTextoOutros);
+                
+                // Ajustar e desenhar o telefone
+                const larguraTelefone = desenharTexto(ctx, telefone, posXTelefone, posYTelefone, maxFontSize, maxLarguraTextoOutros);
+
+                // Definir a área clicável do telefone
+                telefoneArea = {
+                    x: posXTelefone,
+                    y: posYTelefone - maxFontSize, // Ajuste para a altura do texto
+                    width: larguraTelefone,
+                    height: maxFontSize
+                };
+
+                // Configurar link de download
                 var downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = canvas.toDataURL();
                 downloadLink.download = 'assinatura_digital.png';
@@ -129,6 +130,30 @@
                 downloadLink.innerText = 'Baixar Assinatura';
             };
         }
+
+        function ativarCliqueTelefone() {
+            telefoneLinkAtivo = true; // Ativa o link para o telefone
+        }
+
+        document.getElementById('assinaturaCanvas').addEventListener('click', function(event) {
+            if (!telefoneLinkAtivo) return; // Verifica se o link foi ativado
+
+            // Obtém as coordenadas do clique
+            const rect = this.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Verifica se o clique está dentro da área do telefone
+            if (
+                x >= telefoneArea.x &&
+                x <= telefoneArea.x + telefoneArea.width &&
+                y >= telefoneArea.y &&
+                y <= telefoneArea.y + telefoneArea.height
+            ) {
+                // Redireciona para o WhatsApp com o número formatado
+                window.open(`https://wa.me/${telefoneFormatado}`, '_blank');
+            }
+        });
     </script>
 
 </body>
